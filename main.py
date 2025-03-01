@@ -16,11 +16,23 @@ common = 125
 lower_red = np.array([common- delta, 0, 0])
 upper_red = np.array([common + delta, 255, 255])
 
-# Threshold the HSV image to get only blue colors
+# Threshold the HSV image to get only red colors
 mask = cv.inRange(hsv_image, lower_red, upper_red)
 
-cv.imwrite('./mask.jpg', mask)
+kernel = np.ones((3, 3), np.uint8)
+opened_mask = cv.morphologyEx(mask, cv.MORPH_OPEN, kernel, iterations=2)
+
+close_kernel = np.ones((9, 9), np.uint8)
+opened_closed_mask = cv.morphologyEx(opened_mask, cv.MORPH_CLOSE, close_kernel, iterations=2)
 
 # Bitwise-AND mask and original image
 result = cv.bitwise_and(image, image, mask=mask)
-cv.imwrite('./result.jpg', result)
+cv.imwrite('./output/result.jpg', result)
+
+opened_result = cv.bitwise_and(image, image, mask=opened_mask)
+cv.imwrite('./output/opened.jpg', opened_result)
+
+opened_closed_result = cv.bitwise_and(image, image, mask=opened_closed_mask)
+cv.imwrite('./output/opened_closed.jpg', opened_closed_result)
+
+
