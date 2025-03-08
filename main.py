@@ -1,6 +1,33 @@
 import cv2 as cv
 import numpy as np
-import copy
+
+def equalize_histogram(image):
+  hsv_image = cv.cvtColor(image, cv.COLOR_BGR2HSV)
+
+  intensity_channel = hsv_image[:,:,2]
+  equalized_intensity = cv.equalizeHist(intensity_channel)
+  hsv_image[:,:,2] = equalized_intensity
+
+  return cv.cvtColor(hsv_image, cv.COLOR_HSV2BGR)
+
+def in_color_range(image, color_range, to_hsv_mapping = cv.COLOR_BGR2HSV):
+  (range_low, range_high) = color_range
+
+  hsv_image = cv.cvtColor(image, to_hsv_mapping)
+
+  # Threshold the HSV image to get only colors in the range
+  mask = cv.inRange(hsv_image, range_low, range_high)
+
+  close_kernel = np.ones((9, 9), np.uint8)
+  close_mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, close_kernel, iterations=2)
+
+  open_kernel = np.ones((5, 5), np.uint8)
+  opened_closed_mask = cv.morphologyEx(close_mask, cv.MORPH_OPEN, open_kernel, iterations=2)
+
+  # Bitwise-AND the mask with the original image
+  return cv.bitwise_and(image, image, mask=opened_closed_mask)
+
+
 image_names = [
   './train/1000_F_409785284_0SeCTRiQ0M5ASa4TlpDdrbsMIJSAvC0l_jpg.rf.20f26de85cca598302a0589e6d4071f2.jpg',
   './train/1000_F_66568719_Qau3aUyTW2yHcuYZVIN5tLR5aMPbBccS_jpg.rf.7574fb08346bfe66a782ae9becb6e7ae.jpg',
@@ -11,45 +38,19 @@ image_names = [
 
 for i, img_name in enumerate(image_names):
   image = cv.imread(img_name)
-  print(image.shape)
-
   cv.imwrite(f"./output/original{i}.jpg", image)
 
-  # Note that we swap our red and blue channels here - when we mask based on the
-  # color space, our red channel is now in the middle of our range
-  hsv_image = cv.cvtColor(image, cv.COLOR_RGB2HSV)
-
-  intensity_channel = hsv_image[:,:,2]
-  equalized_intensity = cv.equalizeHist(intensity_channel)
-  hsv_image[:,:,2] = equalized_intensity
-
-  equalized = cv.cvtColor(hsv_image, cv.COLOR_HSV2RGB)
+  equalized = equalize_histogram(image)
   cv.imwrite(f"./output/equalized{i}.jpg", equalized)
-
-
-  red = np.uint8([[[0, 0, 240]]])
-  hsv_red = cv.cvtColor(red,cv.COLOR_BGR2HSV)
 
   delta = 11
   common = 125
 
-  # define range of red color in HSV
+  # define range of red color (technically blue, but we're going to flip red and blue channels) in HSV
   lower_red = np.array([common- delta, 75, 50])
   upper_red = np.array([common + delta, 255, 240])
 
-  # Threshold the HSV image to get only red colors
-  mask = cv.inRange(hsv_image, lower_red, upper_red)
-
-  close_kernel = np.ones((9, 9), np.uint8)
-  close_mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, close_kernel, iterations=2)
-
-  open_kernel = np.ones((5, 5), np.uint8)
-  opened_closed_mask = cv.morphologyEx(close_mask, cv.MORPH_OPEN, open_kernel, iterations=2)
-
-  # Bitwise-AND the mask with the original image
-  result = cv.bitwise_and(image, image, mask=mask)
-
-  closed_result = cv.bitwise_and(image, image, mask=close_mask)
-
-  opened_closed_result = cv.bitwise_and(image, image, mask=opened_closed_mask)
-  cv.imwrite(f"./output/result{i}.jpg", opened_closed_result)
+  # Note that we swap our red and blue channels here - when we mask based on the
+  # color space, our red channel is now in the middle of our range
+  final_result = in_color_range(equalized, (lower_red, upper_red), cv.COLOR_RGB2HSV)
+  cv.imwrite(f"./output/result{i}.jpg", final_result)
