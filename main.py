@@ -4,7 +4,9 @@ import copy
 image_names = [
   './train/1000_F_409785284_0SeCTRiQ0M5ASa4TlpDdrbsMIJSAvC0l_jpg.rf.20f26de85cca598302a0589e6d4071f2.jpg',
   './train/1000_F_66568719_Qau3aUyTW2yHcuYZVIN5tLR5aMPbBccS_jpg.rf.7574fb08346bfe66a782ae9becb6e7ae.jpg',
-  './train/1000_F_554675617_T0REMFgCVaKbTLuxVJX7QM9cfzXwdrva_jpg.rf.62f62df8a3f0bed7ffed686da8361639.jpg'
+  './train/images-1-_jpg.rf.7b5743f39f7fa046dff13e1fdb3887b8.jpg',
+  './train/images-6-_jpg.rf.3b1a69b709f5afe55d00f6e3c10b3d99.jpg',
+  './train/images-13-_jpg.rf.50ac62b8f90243115b16de1a90bdaadf.jpg'
 ]
 
 for i, img_name in enumerate(image_names):
@@ -28,11 +30,11 @@ for i, img_name in enumerate(image_names):
   red = np.uint8([[[0, 0, 240]]])
   hsv_red = cv.cvtColor(red,cv.COLOR_BGR2HSV)
 
-  delta = 6
-  common = 116
+  delta = 11
+  common = 125
 
   # define range of red color in HSV
-  lower_red = np.array([common- delta, 0, 50])
+  lower_red = np.array([common- delta, 75, 50])
   upper_red = np.array([common + delta, 255, 240])
 
   # Threshold the HSV image to get only red colors
